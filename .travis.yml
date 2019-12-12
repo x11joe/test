@@ -1,0 +1,11 @@
+language: java
+jdk:
+  - openjdk8
+  - openjdk11
+  - openjdk-ea
+matrix:
+  allow_failures:
+    - jdk: openjdk11
+    - jdk: openjdk-ea
+  fast_finish: true
+script: mvn test
