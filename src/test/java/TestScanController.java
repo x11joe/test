@@ -2,9 +2,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class TestSomething {
+public class TestScanController {
     @Test
-    public void test(){
+    public void jUnitInitialAssertionTest(){
         assertTrue(true);
     }
+
+
 }

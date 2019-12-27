@@ -1,4 +1,4 @@
-package hello;
+package com.securityapp.controllers;
 
 import java.util.Arrays;
 
