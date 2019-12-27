@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.deser.DataFormatReaders;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 
 //@JA - Note that content for this DEMO comes from (https://securityheaders.com/?q=google.com&followRedirects=on)
 //@JA - This implementation DOES NOT do `follow redirects` but could be added in the future if needed.
+//@JA - This implementation DOES NOT support multiple cookies very well at the moment.
 @RestController
 public class ScanController {
 
@@ -22,19 +25,49 @@ public class ScanController {
 	private HttpHeaders headers;
 	private String grade = "F";//@JA By default assume F Grade
 
+	private static boolean doesPatternExist(String s,String passedPattern) {
+		Pattern pattern = Pattern.compile(passedPattern,Pattern.CASE_INSENSITIVE);
+		Matcher matcher = pattern.matcher(s);
+		if (matcher.find()){
+			return true;
+		}
+		return false;
+	}
+
+	private static String addToStringWithSpaces(String s,String newString){
+		if(s.length()!=0){
+			s = s +" "+newString;
+		}else{
+			s = s + newString;
+		}
+		return s;
+	}
+
 	//@JA - Checks for problems in existing headers
 	private Map<String,String> checkHeaders(Map<String,String> headerData){
 		Map<String,String> returnData = new HashMap<>();
 
 		//Cookie security checks.
 		if(headerData.containsKey("Set-Cookie")){
-			//Check if it contains the secure flag or not
-			if(Pattern.matches("secure","/; Secure/gis")){
-				returnData.put("Set-Cookie","The 'secure' flag is not set on this cookie.");
+			String setCookieProblems = "";
+			String cookieData = headerData.get("Set-Cookie");
+
+			//@JA - Check if it contains the secure flag or not.  Note that this is not the best RegEx for this, this is merely a DEMO.
+			if(!doesPatternExist(cookieData,"/; Secure")){
+				setCookieProblems = addToStringWithSpaces(setCookieProblems,"The 'secure' flag is not set on this cookie.");
 			}
+
 			//Check for Cookie Prefix
+			if(!doesPatternExist(cookieData,"__Host") && !doesPatternExist(cookieData,"__Secure")){
+				setCookieProblems = addToStringWithSpaces(setCookieProblems,"There is no Cookie Prefix on this cookie.");
+			}
 
 			//Check for SameSite Cookie.
+			if(!doesPatternExist(cookieData,"; SameSite")){
+				setCookieProblems = addToStringWithSpaces(setCookieProblems,"This is not a SameSite Cookie.");
+			}
+
+			returnData.put("Set-Cookie",setCookieProblems);
 		}
 		if(headerData.containsKey("X-Powered-By")){
 			returnData.put("X-Powered-By","X-Powered-By can usually be seen with values like \"PHP/5.5.9-1ubuntu4.5\" or \"ASP.NET\". Trying to minimise the amount of information you give out about your server is a good idea. This header should be removed or the value changed.");
