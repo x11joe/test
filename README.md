@@ -1,4 +1,7 @@
-# Header Security Check DEMO
-This is a DEMO of a header security check.  It is currently missing a lot of features but showcases the possibilities given the time to fully implement.
+# Header Security Check Demo
+This is a demo project demonstrating the use of the following:
 
-Coded By: Joseph Astrahan
+Spring Boot Java Framework for the backend
+Travis-CI for continuous integration
+
+If there are any questions please direct them to my email: astrahanjoe@gmail.com. I'm currently looking for full time work as a software engineer in the security field.
