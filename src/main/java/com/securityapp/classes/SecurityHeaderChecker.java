@@ -16,14 +16,22 @@ import java.util.regex.Pattern;
 public class SecurityHeaderChecker {
 
     private RestTemplate rest = new RestTemplate();
-    private HttpHeaders headers;
-    public String grade = "F";//@JA By default assume F Grade
+    public HttpHeaders testHeaders = new HttpHeaders();
+    public Integer grade = 10;//@JA - By default assume A Grade, each mistake minus 1.  <5 is F, 6 = D, 7=C, 8=B, 9=A, 10=A+
+    public Boolean testMode = false;
 
     //@JA - Returns JSON of the security scan results
     public String securityScanResults(String website){
-        URI url = URI.create("https://"+website);
-        //String result = rest.getForObject(url,String.class); //If we want the body data uncomment this.
-        headers = rest.headForHeaders(url);
+
+        HttpHeaders headers = new HttpHeaders();
+        URI url = URI.create("https://" + website);
+
+        if(testMode==false) {
+            //String result = rest.getForObject(url,String.class); //If we want the body data uncomment this.
+            headers = rest.headForHeaders(url);
+        }else{
+            headers = testHeaders;
+        }
 
         //@JA - Convert the Set type to a hashMap that we can easily sort/find with. (https://stackoverflow.com/questions/16108734/convert-setmap-entryk-v-to-hashmapk-v)
         Set<Map.Entry<String, List<String>>> headerEntriesSet = headers.entrySet();
@@ -37,11 +45,14 @@ public class SecurityHeaderChecker {
 
         Map<String,String> problemHeaderResults = checkHeaders((headerMapFromSet));//@JA - List of passing header results with information regarding it.
         Map<String,String> theMissingHeaders = missingHeaders(headerMapFromSet);//@JA - Finds all the missing headers and puts into a hashmap with the header in question and how to solve the issue.
+        Map<String,String> theGrade = new HashMap<>();
+        theGrade.put("Score",grade.toString());
 
         //@JA - Add the results to the final JSON object to be printed.  Each result subset is organized by a key for easy access & human readability on the FRONT-END side.
         jsonResults.put("rawHeaders", headerMapFromSet);
         jsonResults.put("problemHeaders",problemHeaderResults);
         jsonResults.put("missingHeaders",theMissingHeaders);
+        jsonResults.put("grade",theGrade);
 
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -83,25 +94,30 @@ public class SecurityHeaderChecker {
             //@JA - Check if it contains the secure flag or not.  Note that this is not the best RegEx for this, this is merely a DEMO.
             if(!doesPatternExist(cookieData,"/; Secure")){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"The 'secure' flag is not set on this cookie.");
+                grade = grade - 1;
             }
 
             //Check for Cookie Prefix
             if(!doesPatternExist(cookieData,"__Host") && !doesPatternExist(cookieData,"__Secure")){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"There is no Cookie Prefix on this cookie.");
+                grade = grade - 1;
             }
 
             //Check for SameSite Cookie.
             if(!doesPatternExist(cookieData,"; SameSite")){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"This is not a SameSite Cookie.");
+                grade = grade - 1;
             }
 
             returnData.put("Set-Cookie",setCookieProblems);
         }
         if(headerData.containsKey("X-Powered-By")){
             returnData.put("X-Powered-By","X-Powered-By can usually be seen with values like \"PHP/5.5.9-1ubuntu4.5\" or \"ASP.NET\". Trying to minimise the amount of information you give out about your server is a good idea. This header should be removed or the value changed.");
+            grade = grade - 1;
         }
         if(headerData.containsKey("Server")){
             returnData.put("Server","This Server header seems to advertise the software being run on the server but you can remove or change this value.");
+            grade = grade - 1;
         }
 
         return returnData; //This will return a hashmap with why it passed or failed for each header.
@@ -116,31 +132,37 @@ public class SecurityHeaderChecker {
             returnData.put("Strict-Transport-Security","Pass");
         }else{
             returnData.put("Strict-Transport-Security","HTTP Strict Transport Security is an excellent feature to support on your site and strengthens your implementation of TLS by getting the User Agent to enforce the use of HTTPS. Recommended value \"Strict-Transport-Security: max-age=31536000; includeSubDomains\".");
+            grade = grade - 1;
         }
         if(headerData.containsKey("Content-Security-Policy")){
             returnData.put("Content-Security-Policy","Pass");
         }else{
             returnData.put("Content-Security-Policy","Content Security Policy is an effective measure to protect your site from XSS attacks. By whitelisting sources of approved content, you can prevent the browser from loading malicious assets.");
+            grade = grade - 1;
         }
         if(headerData.containsKey("X-Frame-Options")){
             returnData.put("X-Frame-Options","Pass");
         }else{
             returnData.put("X-Frame-Options","X-Frame-Options tells the browser whether you want to allow your site to be framed or not. By preventing a browser from framing your site you can defend against attacks like clickjacking. Recommended value \"X-Frame-Options: SAMEORIGIN\".");
+            grade = grade - 1;
         }
         if(headerData.containsKey("X-Content-Type-Options")){
             returnData.put("X-Content-Type-Options","Pass");
         }else{
             returnData.put("X-Content-Type-Options","X-Content-Type-Options stops a browser from trying to MIME-sniff the content type and forces it to stick with the declared content-type. The only valid value for this header is \"X-Content-Type-Options: nosniff\".");
+            grade = grade - 1;
         }
         if(headerData.containsKey("Referrer-Policy")){
             returnData.put("Referrer-Policy","Pass");
         }else{
             returnData.put("Referrer-Policy","Referrer Policy is a new header that allows a site to control how much information the browser includes with navigations away from a document and should be set by all sites.");
+            grade = grade - 1;
         }
         if(headerData.containsKey("Feature-Policy")){
             returnData.put("Feature-Policy","Pass");
         }else{
             returnData.put("Feature-Policy","Feature Policy is a new header that allows a site to control which features and APIs can be used in the browser.");
+            grade = grade - 1;
         }
         return returnData;
     }
