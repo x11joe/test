@@ -30,12 +30,6 @@ public class TestScanController {
         checker.testHeaders.add("Content-Type","text/html; charset=ISO-8859-1");
 
         String results = checker.securityScanResults("www.google.com");//@JA - Does not actually make connection to Google.com in this case, but simulates a result that should generate a 'D' Grade.
-        if(checker.grade == 1) { //@JA - It so happens the score would be '1' in this case for the sample HeaderData.
-            System.out.println(results);//Show the results to verify it worked.
-            assertTrue(true);
-        }else{
-            System.out.println(results);//Show the results to verify it worked.
-            assertTrue(false);
-        }
+        assertTrue(checker.grade == 1);
     }
 }
