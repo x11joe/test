@@ -15,6 +15,9 @@ import java.util.regex.Pattern;
 
 public class SecurityHeaderChecker {
 
+    private static Pattern cookieSecurePattern = Pattern.compile("/; Secure",Pattern.CASE_INSENSITIVE);
+    private static Pattern hostPattern = Pattern.compile("__Host",Pattern.CASE_INSENSITIVE);
+    private static Pattern sameSitePattern = Pattern.compile("; SameSite",Pattern.CASE_INSENSITIVE);
 
     //@JA - Returns JSON of the security scan results
     public static checkResults scanHeaders(HttpHeaders headers){
@@ -38,15 +41,6 @@ public class SecurityHeaderChecker {
         return results;
     }
 
-    static boolean doesPatternExist(String s,String passedPattern) {
-        Pattern pattern = Pattern.compile(passedPattern,Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(s);
-        if (matcher.find()){
-            return true;
-        }
-        return false;
-    }
-
     static String addToStringWithSpaces(String s,String newString){
         if(s.length()!=0){
             s = s +" "+newString;
@@ -66,19 +60,19 @@ public class SecurityHeaderChecker {
             String cookieData = headerData.get("Set-Cookie");
 
             //@JA - Check if it contains the secure flag or not.  Note that this is not the best RegEx for this, this is merely a DEMO.
-            if(!doesPatternExist(cookieData,"/; Secure")){
+            if(!cookieSecurePattern.matcher(cookieData).find()){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"The 'secure' flag is not set on this cookie.");
                 result.setGrade(result.getGrade()-1);
             }
 
             //Check for Cookie Prefix
-            if(!doesPatternExist(cookieData,"__Host") && !doesPatternExist(cookieData,"__Secure")){
+            if(!hostPattern.matcher(cookieData).find()){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"There is no Cookie Prefix on this cookie.");
                 result.setGrade(result.getGrade()-1);
             }
 
             //Check for SameSite Cookie.
-            if(!doesPatternExist(cookieData,"; SameSite")){
+            if(!sameSitePattern.matcher(cookieData).find()){
                 setCookieProblems = addToStringWithSpaces(setCookieProblems,"This is not a SameSite Cookie.");
                 result.setGrade(result.getGrade()-1);
             }
