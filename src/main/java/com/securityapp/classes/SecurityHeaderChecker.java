@@ -15,22 +15,17 @@ import java.util.regex.Pattern;
 
 public class SecurityHeaderChecker {
 
-    private RestTemplate rest = new RestTemplate();
-    public HttpHeaders testHeaders = new HttpHeaders();
+    public HttpHeaders headers = new HttpHeaders(); //@JA - Allows overriding of the headers.
     public Integer grade = 10;//@JA - By default assume A Grade, each mistake minus 1.  <5 is F, 6 = D, 7=C, 8=B, 9=A, 10=A+
-    public Boolean testMode = false;
 
     //@JA - Returns JSON of the security scan results
     public String securityScanResults(String website){
 
-        HttpHeaders headers = new HttpHeaders();
+        RestTemplate rest = new RestTemplate();
         URI url = URI.create("https://" + website);
 
-        if(testMode==false) {
-            //String result = rest.getForObject(url,String.class); //If we want the body data uncomment this.
+        if(headers.size()==0) {
             headers = rest.headForHeaders(url);
-        }else{
-            headers = testHeaders;
         }
 
         //@JA - Convert the Set type to a hashMap that we can easily sort/find with. (https://stackoverflow.com/questions/16108734/convert-setmap-entryk-v-to-hashmapk-v)
