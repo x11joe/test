@@ -22,7 +22,7 @@ public class SecurityHeaderChecker {
     public String securityScanResults(String website){
 
         RestTemplate rest = new RestTemplate();
-        URI url = URI.create("https://" + website);
+        URI url = URI.create("https://" + website);//test change
 
         if(headers.size()==0) {
             headers = rest.headForHeaders(url);
