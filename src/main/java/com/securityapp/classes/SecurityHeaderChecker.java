@@ -1,16 +1,12 @@
 package com.securityapp.classes;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
+import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
 public class SecurityHeaderChecker {
@@ -41,18 +37,10 @@ public class SecurityHeaderChecker {
         return results;
     }
 
-    static String addToStringWithSpaces(String s,String newString){
-        if(s.length()!=0){
-            s = s +" "+newString;
-        }else{
-            s = s + newString;
-        }
-        return s;
-    }
-
     //@JA - Checks for problems in existing headers
     static void checkHeaders(Map<String,String> headerData,checkResults result){
         Map<String,String> returnData = new HashMap<>();
+        StringJoiner joiner = new StringJoiner(" ");
 
         //Cookie security checks.
         if(headerData.containsKey("Set-Cookie")){
@@ -61,22 +49,23 @@ public class SecurityHeaderChecker {
 
             //@JA - Check if it contains the secure flag or not.  Note that this is not the best RegEx for this, this is merely a DEMO.
             if(!cookieSecurePattern.matcher(cookieData).find()){
-                setCookieProblems = addToStringWithSpaces(setCookieProblems,"The 'secure' flag is not set on this cookie.");
+                joiner.add("The 'secure' flag is not set on this cookie.");
                 result.setGrade(result.getGrade()-1);
             }
 
             //Check for Cookie Prefix
             if(!hostPattern.matcher(cookieData).find()){
-                setCookieProblems = addToStringWithSpaces(setCookieProblems,"There is no Cookie Prefix on this cookie.");
+                joiner.add("There is no Cookie Prefix on this cookie.");
                 result.setGrade(result.getGrade()-1);
             }
 
             //Check for SameSite Cookie.
             if(!sameSitePattern.matcher(cookieData).find()){
-                setCookieProblems = addToStringWithSpaces(setCookieProblems,"This is not a SameSite Cookie.");
+                joiner.add("This is not a SameSite Cookie.");
                 result.setGrade(result.getGrade()-1);
             }
 
+            setCookieProblems = joiner.toString();
             returnData.put("Set-Cookie",setCookieProblems);
         }
         if(headerData.containsKey("X-Powered-By")){
